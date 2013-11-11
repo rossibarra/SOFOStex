@@ -1,0 +1,189 @@
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage{fixltx2e}
+\usepackage[T1]{fontenc}
+%\usepackage{hyperref}
+%\usepackage{ucs}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{url}
+\urlstyle{rm}
+
+\usepackage[sort]{natbib}
+%\setcitestyle{citesep={;},aysep={}}
+\usepackage{fullpage}
+\usepackage{graphics}
+
+\usepackage{microtype}
+%\usepackage[adobe-utopia]{mathdesign}
+\usepackage{mathptmx}
+
+\usepackage{lineno}
+
+\usepackage[doublespacing]{setspace}
+
+\usepackage{rotating}% provides a rotate environment
+\newcommand{\rotxc}[1]{\begin{sideways}#1\end{sideways}}
+\newcommand{\invert}[1]{\rotxc{\rotxc{#1}}}
+
+%\DeclareUnicodeCharacter{2229}{\uinv}
+
+\title{SoFoS: Wisely Rescale Genetic Polymorphism Data}
+\author{Reed A. Cartwright\textsuperscript{1} and %
+Jeffrey Ross-Ibarra\textsuperscript{2}%
+}
+\date{}
+
+\begin{document}
+\maketitle
+
+\noindent%
+\textsuperscript{1}%
+School of Life Sciences, Arizona State University, PO Box 875301, Tempe AZ 85287-5301. %
+
+\noindent
+\textsuperscript{2}%
+Dept. of Plant Sciences, Center for Population Biology, and the Genome Center, University of California, One Shields Ave, Davis, CA 95616.
+
+Keywords:
+
+Running Title: site frequency spectrum, sampling % others??
+
+Corresponding Author: Reed A. Cartwright, School of Life Sciences, Arizona State University, PO Box 875301, Tempe AZ 85287-5301.  Email: cartwright@asu.edu.  Phone: 480-965-9949
+
+%\settowidth
+%Our program, \parbox{6pt}{S}\parbox{5.5pt}{o}\parbox{6pt}{F}\parbox{5.5pt}{o}\parbox{6pt}{S}
+
+\newpage
+\linenumbers
+
+\section{Introduction}
+
+In population genetics, the allele or site frequency spectrum (SFS) is a histogram of the counts of alleles at each frequency observed in a population (Fig X), and serves as an important summary of population genetic data.   Substantial theory has been built around expectations of the SFS under various evolutionary models, including complex demography \citep{Gutenkunst2009} or natural selection \citep{Nielsen2005a}, and migration (CITE), and simultaneous analysis of multiple frequency spectra has allowed inference of complex demographies in multiple populations. The SFS has been used to identify errors in data (CITE) and ascertainment bias in the marker data \citep{Nielsen2004}.  A number of commonly used population genetic statistics, including Watterson's \citep{Watterson1975} $\theta$, nucleotide diversity $\pi$, Tajima's \citep{Tajima1989} D statistic and derivatives \citep{Fu1993}, and Fay and Wu's H \citep{Fay2000} %ANY OTHERS??
+are simply summaries of the information in the full SFS.  
+
+The decreasing cost and increasing throughput of sequencing technologies has made the analysis of large multilocus (or full genome) datasets much more common.  Such data provide considerable power for testing predictions of the SFS, but as datasets become larger variation in sample size among loci or populations has become a bigger issue.  Such variation occurs for a number of reasons, from difficulties in obtaining samples, sample failure, or low read depth in certain regions of the genome.  All eight articles utilizing population genetic data in a recent issue of Molecular Ecology (v. 20 issue 14), for example, had variable sample size among loci, populations, or treatments.  Variability in sample size substantially complicates comparison using the SFS:  does one compare the number of singletons (alleles that exist in a single individual) in a sample of size 8 to the singletons or doubletons (alleles in two individuals) in a sample of size 10?  
+
+One solution to the difficulty of comparing SFS in different sample sizes has been to simply randomly trim data until sample sizes are equal (CITE).  To allow comparisons without entirely throwing away data, however, some authors have used a subsampling procedure to estimate the site frequency spectrum of a reduced sample from a larger sample \citep{Nielsen2005}.  While this is a statistically elegant solution, it still does not necessarily make the best use of all the data.  In many cases, one might have only a few loci or populations with reduced sample size, requiring down-sampling (and thus reduced power) of the majority of the data.  Here, we present statistical methods and online software that extends these sampling ideas to seamlessly allow for both up- and down- sampling of SFS data from multilocus multi population datasets.  With multiple sampling schemes and flexible Bayesian priors, our software SOFOS easily accommodates almost any combination of sampling schemes.  In addition to introducing the method, we discuss limitations of the approach and suggest criteria for efficient usage of the majority of the data without inflating uncertainty in the resulting re-sampled SFS.
+
+%How hard would it be to let the user put in two datasets, scale both, and show the joint SFS? That would be a cool addition, but if it's hard to do not worth it.
+
+\section{Methods}
+
+\subsection{Notation and Terminology}
+
+Suppose that we have observed $n$ alleles at a site and identified them as either ancestral or derived.   Let $k$ represent the number of derived alleles.  Alleles that are missing or could not be identified are not included in the total.  Initially we will describe our methodology in terms of derived alleles, but we will discuss how to handle sites in which it is unknown which allele is the ancestral one.
+
+%add info about folded and inferring unfolded
+
+In order to properly compare two sites with different sample sizes, we want to rescale all sites to a common sample size, $m$.  However, there is no direct one-to-one mapping of samples of size $n$ to samples of size $m$, when $m \ne n$.  Thus our goal is to calculate distributions that represent the probability of $x$ number of derived alleles in $m$ samples when the sample size is changed.  By summing these distributions, we can calculate the expected allele frequency spectrum when all sizes are rescaled to the same sample size.
+
+\subsection{Beta-Binomial Model of SNP Data}
+
+Suppose that site $i$ has a derived-allele frequency of $p_i$.  Thus the number of derived alleles in a sample of size $n$ follows a binomial distribution:
+\[
+P(k_i|n_i,p_i) = \frac{\Gamma(n_i+1)}{\Gamma(k_i+1) \Gamma(n_i-k_i+1)}%
+p_i^k (1-p_i)^{n_i-k_i}
+\]
+where $0 \le k_i \le n_i$ and $\Gamma(z)$ is the gamma function.  
+
+%is this text needed:  (The factorial function and gamma function are related.)
+
+Due to the effects of population genetics and evolution, the allele frequencies of different SNPs will be related.  To represent this relationship, we suppose that each SNP has an independent allele frequency, but that all frequencies are drawn from a common distribution.  We will represent this `prior' distribution on allele frequencies using a beta distribution:
+\[
+f(p_i|\alpha,\beta) = \frac{\Gamma(\alpha+\beta)}{\Gamma(\alpha)\Gamma(\beta)}%
+p_i^{\alpha-1}(1-p_i)^{\beta-1}
+\]
+where $0 \le p_i \le 1$.  The shape of the beta distribution is controlled by parameters $\alpha > 0$, and $\beta > 0$.  The beta distribution is a suitable choice because it is the conjugate prior of the binomial distribution and several useful distributions are specializations of it, including the continuous uniform distribution ($\alpha=1$ and $\beta=1$). 
+
+%not sure is necessary a figure:  See Figure XXX for a range of beta distributions.
+
+The conjugate distribution of a beta and a binomial produces the well known beta-binomial distribution:
+\[
+P(k_i|n_i,\alpha,\beta) =  \frac{\Gamma(n_i+1)}{\Gamma(k_i+1) \Gamma(n_i-k_i+1)}%
+\frac{\Gamma(\alpha+\beta)}{\Gamma(\alpha)\Gamma(\beta)}%
+\frac{\Gamma(\alpha+k_i)\Gamma(\beta+n_i-k_i)}{\Gamma(\alpha+\beta+n_i)}
+\]
+
+\subsection{Resampling}
+
+%I think we need to make this breakdown of algorithms clearer.  The user has two choices -- rescale or resample.  Either choice is possible for increasing or decreasing the sample size, but only resampling is possible for keeping the sample size the same. So on the left of the sofos page it should say "sample size" and then "increasing, equal, decreasing" then give the choice of "rescale" or "resample" for each of those.  That would make it easier to follow for the average user.
+
+% We should cite somewhere Nielsen et al.  That's to my knowledge the first use of the downscaling approach.
+%Nielsen R, Bustamante C, Clark AG, Glanowski S, Sackton TB et al. (2005) A scan for positively selected genes in the genomes of humans and chimpanzees. PLoS Biol 3: e170.
+
+SoFoS utilizes four different algorithms for rescaling genetic polymorphism data.  We will first discuss `resampling', which can be used to rescale any site.  In resampling, we first use the current $n_i$ samples to update the prior for site $i$, then draw $m$ samples according to this updated prior.  Because the beta distribution is the conjugate prior of the binomial distribution, the updated prior is also a beta distribution, but with different parameters:  $\alpha_i = \alpha + k_i$ and $\beta_i = \beta + n_i-k_i$.  Thus using resampling, the distribution of the site after rescaling is
+\[
+P(x|m,n_i,k_i,\alpha,\beta) =  \frac{\Gamma(m+1)}{\Gamma(x+1) \Gamma(m-x+1)}%
+\frac{\Gamma(\alpha+\beta+n_i)}{\Gamma(\alpha+k_i)\Gamma(\beta+n_i-k_i)}%
+\frac{\Gamma(\alpha+k_i+x)\Gamma(\beta+n_i-k_i+m-x)}{\Gamma(\alpha+\beta+n_i+m)}
+\]
+where $0 \le x \le m$.
+
+%not yet.  [Figure on how updating the prior works?]
+
+%let's skip this alternative.  i think we simply describe whichever is implemented in Sofos.  
+%An alternative for resampling using the beta-binomial model is to simply resample from the existing sample with replacement, resulting in a binomial distribution with $m$ observations and $p_i = k_i/n_i$ probability of success.
+
+\subsection{Rescaling Algorithms}
+
+While resampling works for all possible sample sizes, $n_i$, it is inefficient.  If a site has 99 observations, and the rescaled size is 100, rescaling will use the 99 to estimate the allele frequency of the site and then draw 100 new samples.  A more efficient method would be to draw just 1 new sample and add it to the existing 99.  This logic is implemented in the `supersampling' algorithm, but only works if $m>n_i$.  As a result, the rescaling distribution for supersampling is the same as that for resampling except for a change in variables: $m \rightarrow m-n_i$ and $x \rightarrow x-k_i$.  In addition the range of $x$ becomes $k_i \le x \le m-(n_i-k_i)$, and $P(x|m,n_i,k_i) = 0$ otherwise.
+
+Alternatively, if the sample size is less than rescaling size, $m < n_i$, we can generate the rescaling distribution by picking alleles from the existing sample without replacement.  This is implemented in the `subsampling' algorithm and produces a hypergeometric distribution:
+\[
+P(x|m,n_i,k_i) = \frac{\Gamma(k_i+1)}{\Gamma(x+1)\Gamma(k_i-x+1)}%
+\frac{\Gamma(n_i-k_i+1)}{\Gamma(m-x+1)\Gamma((n_i-k_i)-(m-x)+1)}%
+\frac{\Gamma(m+1)\Gamma(n_i-m+1)}{\Gamma(n_i+1)}
+\]
+where $0 \le x \le m$.
+
+%for the subsampling we should cite other papers -- like the Nielsen paper -- that have already implemented this.  maybe that's done in the intro.  
+
+And in the final case, the sample size and the rescaling size are equal, $m = n_i$.  For this situation, the `samesampling' algorithm does nothing.  Specifically, $P(x|m,n_i,k_i) = 1 \mbox{ if } x = k_i \mbox{ and } 0 \mbox{ otherwise}$.
+
+\subsection{Choosing Reasonable Prior Parameters}
+
+As shown in Figure XXX, the Beta distribution can flexibly represent differently shaped priors.  While it may be tempting to use a uniform distribution ($\alpha=1$ and $\beta=1$) to create an unbiased prior, we can suggest better priors using knowledge about population genetics.  The first is a reciprocal prior derived from the neutral infinite sites model.  According to this model, the frequencies of derived alleles at a SNP are proportional to $1/p$ (cite ewens original paper), and the associated prior parameters are ($\alpha=0$ and $\beta=1$).  The reciprocal prior will fail if $k_i=0$.
+
+%this u-shaped seems not useful.  it only works for multiple populations, which is not the way the SFS is usually used.  nobody plots histograms of the frequency of snps in different populations in the SFS, they plot the frequency of snps in different individuals.  this might be a nice later development of the method to use to estimate parameters in a group of populations, but seems unwarranted for the first pub.
+
+%Other possible priors to use are the classic U-shaped and \invert{U}-shaped curves produced by genetic drift over time.  Wright (1932, proper citation) showed that genetic drift increases the variance in allele frequency among separate demes over time.  While the average allele frequency, $\bar p$, does not change, the variance changes according to the equation
+%$
+%\sigma^2_p(t+1) = \frac{\bar p (1-\bar p)}{2 N}+ \left(1-\frac{1}{2 N}\right) \sigma^2_p(t)
+%$,
+%where $N$ is the size of a diploid population.  Solving this recurrence equation gives us
+%\[
+%\sigma^2_p(t) = \bar p (1-\bar p) \left[1-\left(1-\frac{1}{2 N}\right)^t\right]
+%\]
+%if all demes start with allele frequency $\bar p$ at time 0.  Note that $\theta = 1-\left(1-\frac{1}{2 N}\right)^t$ is $F_{st}$ and measures the amount of population subdivision at time $t$.
+%
+%%http://www.ams.org/journals/bull/1942-48-04/S0002-9904-1942-07641-5/S0002-9904-1942-07641-5.pdf
+%
+%By equating the mean and variance of a beta distribution with the mean and variance of Wright's genetic drift process, we can estimate $\alpha$ and $\beta$ for U-shaped and \invert{U}-shaped curves.
+%\begin{align*}
+%\frac{\alpha}{\alpha+\beta} &= \bar p\\
+%\frac{\alpha\beta}{(\alpha+\beta)^2 (\alpha+\beta+1)} &= 
+%\bar p (1-\bar p) \theta
+%\end{align*}
+%Solving for $\alpha$ and $\beta$ produces
+%\begin{align*}
+%\alpha &= \bar p \frac{1-\theta}{\theta}\\
+%\beta &= (1-\bar p) \frac{1-\theta}{\theta}
+%\end{align*}
+%Thus it is possible to parameterize the prior using the mean allele frequency of derived alleles and the $F_{st}$ of the population.
+
+\section{Results}
+
+\section{Discussion}
+
+\section{References}
+\bibliographystyle{molecol}
+\bibliography{sofos_refs};
+
+\section{Acknowledgements}
+
+\section{Figure Legends}
+
+\section{Tables and Figures}
+
+\end{document}
