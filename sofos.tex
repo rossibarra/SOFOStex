@@ -60,9 +60,9 @@ Corresponding Author: Reed A. Cartwright, School of Life Sciences, Arizona State
 \section{Introduction}
 
 In population genetics, the allele or site frequency spectrum (SFS) is a histogram of the counts of alleles at each frequency observed in a population (Fig X), and serves as an important summary of population genetic data.   Substantial theory has been built around expectations of the SFS under various evolutionary models, including complex demography \citep{Gutenkunst2009} or natural selection \citep{Nielsen2005a}, and migration (CITE), and simultaneous analysis of multiple frequency spectra has allowed inference of complex demographies in multiple populations. The SFS has been used to identify errors in data (CITE) and ascertainment bias in the marker data \citep{Nielsen2004}.  A number of commonly used population genetic statistics, including Watterson's \citep{Watterson1975} $\theta$, nucleotide diversity $\pi$, Tajima's \citep{Tajima1989} D statistic and derivatives \citep{Fu1993}, and Fay and Wu's H \citep{Fay2000} %ANY OTHERS??
-are simply summaries of the information in the full SFS.  
+are simply summaries of the information in the full SFS.
 
-The decreasing cost and increasing throughput of sequencing technologies has made the analysis of large multilocus (or full genome) datasets much more common.  Such data provide considerable power for testing predictions of the SFS, but as datasets become larger variation in sample size among loci or populations has become a bigger issue.  Such variation occurs for a number of reasons, from difficulties in obtaining samples, sample failure, or low read depth in certain regions of the genome.  All eight articles utilizing population genetic data in a recent issue of Molecular Ecology (v. 20 issue 14), for example, had variable sample size among loci, populations, or treatments.  Variability in sample size substantially complicates comparison using the SFS:  does one compare the number of singletons (alleles that exist in a single individual) in a sample of size 8 to the singletons or doubletons (alleles in two individuals) in a sample of size 10?  
+The decreasing cost and increasing throughput of sequencing technologies has made the analysis of large multilocus (or full genome) datasets much more common.  Such data provide considerable power for testing predictions of the SFS, but as datasets become larger variation in sample size among loci or populations has become a bigger issue.  Such variation occurs for a number of reasons, from difficulties in obtaining samples, sample failure, or low read depth in certain regions of the genome.  All eight articles utilizing population genetic data in a recent issue of Molecular Ecology (v. 20 issue 14), for example, had variable sample size among loci, populations, or treatments.  Variability in sample size substantially complicates comparison using the SFS:  does one compare the number of singletons (alleles that exist in a single individual) in a sample of size 8 to the singletons or doubletons (alleles in two individuals) in a sample of size 10?
 
 One solution to the difficulty of comparing SFS in different sample sizes has been to simply randomly trim data until sample sizes are equal (CITE).  To allow comparisons without entirely throwing away data, however, some authors have used a subsampling procedure to estimate the site frequency spectrum of a reduced sample from a larger sample \citep{Nielsen2005}.  While this is a statistically elegant solution, it still does not necessarily make the best use of all the data.  In many cases, one might have only a few loci or populations with reduced sample size, requiring down-sampling (and thus reduced power) of the majority of the data.  Here, we present statistical methods and online software that extends these sampling ideas to seamlessly allow for both up- and down- sampling of SFS data from multilocus multi population datasets.  With multiple sampling schemes and flexible Bayesian priors, our software SOFOS easily accommodates almost any combination of sampling schemes.  In addition to introducing the method, we discuss limitations of the approach and suggest criteria for efficient usage of the majority of the data without inflating uncertainty in the resulting re-sampled SFS.
 
@@ -85,7 +85,7 @@ Suppose that site $i$ has a derived-allele frequency of $p_i$.  Thus the number 
 P(k_i|n_i,p_i) = \frac{\Gamma(n_i+1)}{\Gamma(k_i+1) \Gamma(n_i-k_i+1)}%
 p_i^k (1-p_i)^{n_i-k_i}
 \]
-where $0 \le k_i \le n_i$ and $\Gamma(z)$ is the gamma function.  
+where $0 \le k_i \le n_i$ and $\Gamma(z)$ is the gamma function.
 
 %is this text needed:  (The factorial function and gamma function are related.)
 
@@ -94,7 +94,7 @@ Due to the effects of population genetics and evolution, the allele frequencies 
 f(p_i|\alpha,\beta) = \frac{\Gamma(\alpha+\beta)}{\Gamma(\alpha)\Gamma(\beta)}%
 p_i^{\alpha-1}(1-p_i)^{\beta-1}
 \]
-where $0 \le p_i \le 1$.  The shape of the beta distribution is controlled by parameters $\alpha > 0$, and $\beta > 0$.  The beta distribution is a suitable choice because it is the conjugate prior of the binomial distribution and several useful distributions are specializations of it, including the continuous uniform distribution ($\alpha=1$ and $\beta=1$). 
+where $0 \le p_i \le 1$.  The shape of the beta distribution is controlled by parameters $\alpha > 0$, and $\beta > 0$.  The beta distribution is a suitable choice because it is the conjugate prior of the binomial distribution and several useful distributions are specializations of it, including the continuous uniform distribution ($\alpha=1$ and $\beta=1$).
 
 %not sure is necessary a figure:  See Figure XXX for a range of beta distributions.
 
@@ -122,7 +122,7 @@ where $0 \le x \le m$.
 
 %not yet.  [Figure on how updating the prior works?]
 
-%let's skip this alternative.  i think we simply describe whichever is implemented in Sofos.  
+%let's skip this alternative.  i think we simply describe whichever is implemented in Sofos.
 %An alternative for resampling using the beta-binomial model is to simply resample from the existing sample with replacement, resulting in a binomial distribution with $m$ observations and $p_i = k_i/n_i$ probability of success.
 
 \subsection{Rescaling Algorithms}
@@ -137,7 +137,7 @@ P(x|m,n_i,k_i) = \frac{\Gamma(k_i+1)}{\Gamma(x+1)\Gamma(k_i-x+1)}%
 \]
 where $0 \le x \le m$.
 
-%for the subsampling we should cite other papers -- like the Nielsen paper -- that have already implemented this.  maybe that's done in the intro.  
+%for the subsampling we should cite other papers -- like the Nielsen paper -- that have already implemented this.  maybe that's done in the intro.
 
 And in the final case, the sample size and the rescaling size are equal, $m = n_i$.  For this situation, the `samesampling' algorithm does nothing.  Specifically, $P(x|m,n_i,k_i) = 1 \mbox{ if } x = k_i \mbox{ and } 0 \mbox{ otherwise}$.
 
@@ -162,7 +162,7 @@ As shown in Figure XXX, the Beta distribution can flexibly represent differently
 %By equating the mean and variance of a beta distribution with the mean and variance of Wright's genetic drift process, we can estimate $\alpha$ and $\beta$ for U-shaped and \invert{U}-shaped curves.
 %\begin{align*}
 %\frac{\alpha}{\alpha+\beta} &= \bar p\\
-%\frac{\alpha\beta}{(\alpha+\beta)^2 (\alpha+\beta+1)} &= 
+%\frac{\alpha\beta}{(\alpha+\beta)^2 (\alpha+\beta+1)} &=
 %\bar p (1-\bar p) \theta
 %\end{align*}
 %Solving for $\alpha$ and $\beta$ produces
@@ -177,7 +177,7 @@ As shown in Figure XXX, the Beta distribution can flexibly represent differently
 \section{Discussion}
 
 \section{References}
-\bibliographystyle{molecol}
+\bibliographystyle{authoryear}
 \bibliography{sofos_refs};
 
 \section{Acknowledgements}
